@@ -2,11 +2,10 @@ import openpyxl
 import os
 from natsort import os_sorted 
 from tkinter import *
-from logging import *
 
-# excel_file = 'reports.xlsx'
-# wb = openpyxl.load_workbook(excel_file)
-# sheet = wb['Sheet1']
+excel_file = 'reports.xlsx'
+wb = openpyxl.load_workbook(excel_file)
+sheet = wb['Sheet1']
 rev_letters = ['A','B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N']
 
 
@@ -95,20 +94,48 @@ class App:
                 self.add_entries[i].destroy()
             self.add_labels.clear()
             self.add_entries.clear()
+            self.add_variables.clear()
             self.submit_btn.grid(column = 0, row = 6,padx=5, pady=5)
     
     def submit(self): # PyXl code 
-        print(f"{self.report_number.get()} --") # Default revision
-        if int(self.add_nc.get()) > 0:
-            for i in range(int(self.add_nc.get())+1):
-                if i != 0:
-                    print(f"{self.report_number.get()}---{i}")
-        for i in range(int(self.revisions.get())):
+        # Get total number of reports
+        entry_row = sheet.max_row + 1
+        total_reports = 1 + int(self.revisions.get()) + int(self.add_nc.get())
+        for i in range(len(self.add_variables)):
+            total_reports += int(self.add_variables[i].get())
+
+        # Input constant terms:
+        for i in range(total_reports):
+            sheet.cell(column = 1, row = i + entry_row + 1).value = self.system.get()
+            sheet.cell(column=2, row = i + entry_row + 1). value = self.report_number.get()
+            sheet.cell(column = 6, row = i + entry_row + 1).value = self.report_type.get()
+        
+        
+        # Default Revision 
+        sheet.cell(column = 3, row = entry_row + 1).value = "--"
+        sheet.cell(column = 5, row = entry_row + 1).value = f"{self.report_title.get()} Rev --"
+        
+
+        # Addendums for Revision --
+        for i in range(int(self.add_nc.get())+1):
+            if i != 0:
+                sheet.cell(column = 3, row = entry_row + i + 1).value = "--"
+                sheet.cell(column = 4, row = i + entry_row + 1).value = i
+                sheet.cell(column = 5, row = i + entry_row + 1).value = f"{self.report_title.get()} Rev --{i}"
+
+        # Letter Revisions
+        for i in range(int(self.revisions.get())): 
             for j in range(int(self.add_variables[i].get())+1):
                 if j != 0:
-                    print(f"{self.report_number.get()} {rev_letters[i]}-{j}")
+                    sheet.cell(column = 3, row = entry_row + i + 1 + int(self.add_nc.get())).value = f"{rev_letters[i]}-{j}"
+                    sheet.cell(column = 4, row = entry_row + i + 1 + int(self.add_nc.get())).value = i
+                    sheet.cell(column = 5, row = entry_row + i + 1 + int(self.add_nc.get())).value = f"{self.report_title.get()} Rev {rev_letters[i]}{j}"
+                    
                 else: 
-                    print(f"{self.report_number.get()} {rev_letters[i]}")
+                    sheet.cell(column = 3, row = entry_row + i + 1 + int(self.add_nc.get())).value = f"{rev_letters[i]}"
+                    sheet.cell(column = 5, row = entry_row + i + 1 + int(self.add_nc.get())).value = f"{self.report_title.get()} Rev {rev_letters[i]}"
+        wb.save("reports.xlsx")
+        wb.close()
         self.master.destroy()
         
             
